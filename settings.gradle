@@ -1,2 +1,3 @@
 rootProject.name='Forest Fire Monitor'
 include ':app'
+include ':base'
