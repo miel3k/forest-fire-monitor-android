@@ -1,5 +1,6 @@
 package com.tp.forestfiremonitor.map
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.Menu
@@ -12,15 +13,15 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.tp.forestfiremonitor.R
+import com.tp.forestfiremonitor.extension.toLatLng
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private lateinit var map: GoogleMap
     private val viewModel by viewModel<MapViewModel>()
+    private lateinit var map: GoogleMap
 
     private var editAreaActionMode: ActionMode? = null
     private val editAreaActionModeCallback = object : ActionMode.Callback {
@@ -47,14 +48,13 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             editAreaActionMode = null
         }
     }
+    private var editAreaPolygon: Polygon? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-        setupIsEditAreaModeEnabledObserver()
-        setupCloseActionModeButton()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -84,15 +84,59 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+        setupInitialCameraPosition()
+        setupOnMapClickListener()
+        setupOnMarkerClickListener()
+        setupOnMarkerDragListener()
+        setupIsEditAreaModeEnabledObserver()
+        setupItemsObserver()
+        setupPolygonItemsObserver()
+    }
+
+    private fun setupInitialCameraPosition() {
         val sydney = LatLng(-34.0, 151.0)
-        map.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        map.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        val cameraPosition = CameraPosition
+            .builder()
+            .target(sydney)
+            .zoom(2f)
+            .build()
+        map.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+    }
+
+    private fun setupOnMapClickListener() {
+        map.setOnMapClickListener {
+            viewModel.onMapClick(it)
+        }
+    }
+
+    private fun setupOnMarkerClickListener() {
+        map.setOnMarkerClickListener {
+            viewModel.onMarkerClick(it)
+            true
+        }
+    }
+
+    private fun setupOnMarkerDragListener() {
+        map.setOnMarkerDragListener(object : GoogleMap.OnMarkerDragListener {
+            override fun onMarkerDragEnd(marker: Marker) {
+                viewModel.onMarkerDragEnd(marker)
+            }
+
+            override fun onMarkerDragStart(marker: Marker) {
+                viewModel.onMarkerDrag(marker)
+            }
+
+            override fun onMarkerDrag(marker: Marker) {
+                viewModel.onMarkerDrag(marker)
+            }
+        })
     }
 
     private fun setupIsEditAreaModeEnabledObserver() {
         viewModel.isEditAreaModeEnabled.observe(this, Observer {
             if (it) {
                 editAreaActionMode = startSupportActionMode(editAreaActionModeCallback)
+                setupCloseActionModeButton()
             } else {
                 editAreaActionMode?.finish()
             }
@@ -104,5 +148,37 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         closeButton?.setOnClickListener {
             viewModel.closeEditAreaMode()
         }
+    }
+
+    private fun setupItemsObserver() {
+        viewModel.items.observe(this, Observer { coordinates ->
+            map.clear()
+            coordinates.forEach {
+                val markerOptions = MarkerOptions()
+                    .position(it.coordinate.toLatLng())
+                    .icon(BitmapDescriptorFactory.defaultMarker(getMarkerIconColor(it.isDraggable)))
+                    .draggable(it.isDraggable)
+                map.addMarker(markerOptions).apply { tag = it.id }
+            }
+        })
+    }
+
+    private fun getMarkerIconColor(isDraggable: Boolean): Float {
+        return if (isDraggable) {
+            BitmapDescriptorFactory.HUE_BLUE
+        } else {
+            BitmapDescriptorFactory.HUE_RED
+        }
+    }
+
+    private fun setupPolygonItemsObserver() {
+        viewModel.polygonItems.observe(this, Observer { coordinates ->
+            editAreaPolygon?.remove()
+            val polygonOptions = PolygonOptions()
+                .strokeColor(Color.BLUE)
+                .fillColor(Color.LTGRAY)
+                .addAll(coordinates.map { it.coordinate.toLatLng() })
+            editAreaPolygon = map.addPolygon(polygonOptions)
+        })
     }
 }
