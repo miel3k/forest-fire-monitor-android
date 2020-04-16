@@ -1,3 +1,3 @@
-package com.tp.forestfiremonitor.map
+package com.tp.forestfiremonitor.data.area.model
 
 data class Coordinate(val latitude: Double, val longitude: Double)

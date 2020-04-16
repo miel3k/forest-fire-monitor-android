@@ -1,4 +1,4 @@
-package com.tp.forestfiremonitor.map
+package com.tp.forestfiremonitor.map.view
 
 import android.graphics.Color
 import android.os.Bundle
@@ -16,6 +16,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.tp.forestfiremonitor.R
 import com.tp.forestfiremonitor.extension.toLatLng
+import com.tp.forestfiremonitor.map.viewmodel.MapViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MapActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -174,6 +175,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun setupPolygonItemsObserver() {
         viewModel.polygonItems.observe(this, Observer { coordinates ->
             editAreaPolygon?.remove()
+            if (coordinates.isEmpty()) return@Observer
             val polygonOptions = PolygonOptions()
                 .strokeColor(Color.BLUE)
                 .fillColor(Color.LTGRAY)

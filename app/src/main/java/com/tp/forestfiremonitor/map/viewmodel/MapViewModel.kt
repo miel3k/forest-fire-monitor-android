@@ -1,30 +1,38 @@
-package com.tp.forestfiremonitor.map
+package com.tp.forestfiremonitor.map.viewmodel
 
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.tp.base.MultipleLiveData
+import com.tp.forestfiremonitor.data.area.model.Area
+import com.tp.forestfiremonitor.data.area.model.Coordinate
+import com.tp.forestfiremonitor.data.area.repository.AreaDataSource
 import com.tp.forestfiremonitor.extension.toCoordinate
+import com.tp.forestfiremonitor.map.Item
+import kotlinx.coroutines.launch
 import java.util.*
 
-class MapViewModel : ViewModel() {
+class MapViewModel(private val areaRepository: AreaDataSource) : ViewModel() {
 
-    private val itemList = listOf(
-        Item(UUID.randomUUID().toString(), Coordinate(-27.47093, 153.0235)),
-        Item(UUID.randomUUID().toString(), Coordinate(-33.87365, 151.20689)),
-        Item(UUID.randomUUID().toString(), Coordinate(-34.92873, 138.59995)),
-        Item(UUID.randomUUID().toString(), Coordinate(-12.4634, 130.8456))
-    )
     private val selectedItemId = MutableLiveData<String>().apply { value = "" }
     val isEditAreaModeEnabled = MutableLiveData<Boolean>().apply { value = false }
+    private val area: LiveData<Area> by lazy {
+        MediatorLiveData<Area>().apply {
+            viewModelScope.launch {
+                addSource(areaRepository.getArea()) {
+                    value = it ?: Area()
+                }
+            }
+        }
+    }
     val items: MutableLiveData<List<Item>> by lazy {
         MultipleLiveData<List<Item>>().apply {
             addSources(
+                area,
                 isEditAreaModeEnabled,
                 selectedItemId
-            ) { isEditAreaModeEnabled, selectedItemId ->
+            ) { area, isEditAreaModeEnabled, selectedItemId ->
+                val itemList = area.coordinates.toItems()
                 value = if (isEditAreaModeEnabled == true) {
                     val currentItems = value
                     val items = if (currentItems.isNullOrEmpty()) itemList else currentItems
@@ -53,7 +61,13 @@ class MapViewModel : ViewModel() {
     }
 
     fun saveEditArea() {
-
+        if (!isEditAreaModeEnabled()) return
+        val items = items.value
+        if (items.isNullOrEmpty()) return
+        val coordinates = items.toCoordinates()
+        val area = Area(coordinates = coordinates)
+        viewModelScope.launch { areaRepository.saveArea(area) }
+        isEditAreaModeEnabled.value = false
     }
 
     fun onMapClick(latLng: LatLng) {
@@ -61,9 +75,6 @@ class MapViewModel : ViewModel() {
         val newItem = Item(UUID.randomUUID().toString(), latLng.toCoordinate())
         val newItems = items.value.orEmpty() + newItem
         items.value = newItems
-        if (selectedItemId.value == null) {
-            selectedItemId.value = newItem.id
-        }
     }
 
     fun onMarkerClick(marker: Marker) {
@@ -74,27 +85,26 @@ class MapViewModel : ViewModel() {
 
     fun onMarkerDragEnd(marker: Marker) {
         if (!isEditAreaModeEnabled()) return
-        val newItems = items.value?.map {
-            if (it.id == marker.tag) {
-                Item(it.id, marker.position.toCoordinate(), it.isDraggable)
-            } else {
-                it
-            }
-        }.orEmpty()
+        val newItems = items.value
+            ?.map { Item(it.id, getMarkerPositionOrDefault(it, marker), it.isDraggable) }
+            .orEmpty()
         items.value = newItems
     }
 
     fun onMarkerDrag(marker: Marker) {
         if (!isEditAreaModeEnabled()) return
-        val newPolygonItems = polygonItems.value?.map {
-            if (it.id == marker.tag) {
-                Item(it.id, marker.position.toCoordinate(), it.isDraggable)
-            } else {
-                it
-            }
-        }.orEmpty()
+        val newPolygonItems = polygonItems.value
+            ?.map { Item(it.id, getMarkerPositionOrDefault(it, marker), it.isDraggable) }
+            .orEmpty()
         polygonItems.value = newPolygonItems
     }
 
+    private fun getMarkerPositionOrDefault(item: Item, marker: Marker) =
+        if (item.id == marker.tag) marker.position.toCoordinate() else item.coordinate
+
     private fun isEditAreaModeEnabled() = isEditAreaModeEnabled.value == true
+
+    private fun List<Coordinate>.toItems() = map { Item(UUID.randomUUID().toString(), it) }
+
+    private fun List<Item>.toCoordinates() = map { it.coordinate }
 }
