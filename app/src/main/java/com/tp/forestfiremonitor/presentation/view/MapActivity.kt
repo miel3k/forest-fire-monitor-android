@@ -1,4 +1,4 @@
-package com.tp.forestfiremonitor.map.view
+package com.tp.forestfiremonitor.presentation.view
 
 import android.graphics.Color
 import android.os.Bundle
@@ -16,7 +16,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.tp.forestfiremonitor.R
 import com.tp.forestfiremonitor.extension.toLatLng
-import com.tp.forestfiremonitor.map.viewmodel.MapViewModel
+import com.tp.forestfiremonitor.presentation.viewmodel.MapViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
 import kotlin.concurrent.timerTask

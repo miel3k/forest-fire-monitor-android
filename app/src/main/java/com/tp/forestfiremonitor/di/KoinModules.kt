@@ -4,7 +4,7 @@ import androidx.room.Room
 import com.tp.forestfiremonitor.data.ForestFireMonitorDatabase
 import com.tp.forestfiremonitor.data.area.repository.AreaDataSource
 import com.tp.forestfiremonitor.data.area.repository.AreaRepository
-import com.tp.forestfiremonitor.map.viewmodel.MapViewModel
+import com.tp.forestfiremonitor.presentation.viewmodel.MapViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module

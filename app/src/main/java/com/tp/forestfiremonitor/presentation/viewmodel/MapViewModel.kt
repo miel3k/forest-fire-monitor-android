@@ -1,4 +1,4 @@
-package com.tp.forestfiremonitor.map.viewmodel
+package com.tp.forestfiremonitor.presentation.viewmodel
 
 import androidx.lifecycle.*
 import com.google.android.gms.maps.model.LatLng
@@ -8,7 +8,7 @@ import com.tp.forestfiremonitor.data.area.model.Area
 import com.tp.forestfiremonitor.data.area.model.Coordinate
 import com.tp.forestfiremonitor.data.area.repository.AreaDataSource
 import com.tp.forestfiremonitor.extension.toCoordinate
-import com.tp.forestfiremonitor.map.Item
+import com.tp.forestfiremonitor.presentation.Item
 import kotlinx.coroutines.launch
 import java.util.*
 

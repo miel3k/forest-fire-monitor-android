@@ -1,4 +1,4 @@
-package com.tp.forestfiremonitor.map
+package com.tp.forestfiremonitor.presentation
 
 import com.tp.forestfiremonitor.data.area.model.Coordinate
 
