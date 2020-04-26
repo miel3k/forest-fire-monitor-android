@@ -18,11 +18,14 @@ import com.tp.forestfiremonitor.R
 import com.tp.forestfiremonitor.extension.toLatLng
 import com.tp.forestfiremonitor.map.viewmodel.MapViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.util.*
+import kotlin.concurrent.timerTask
 
 class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private val viewModel by viewModel<MapViewModel>()
     private lateinit var map: GoogleMap
+    private lateinit var timer: Timer
 
     private var editAreaActionMode: ActionMode? = null
     private val editAreaActionModeCallback = object : ActionMode.Callback {
@@ -73,6 +76,11 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        timer.cancel()
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         editAreaActionMode?.let {
             if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_DOWN) {
@@ -92,6 +100,15 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         setupIsEditAreaModeEnabledObserver()
         setupItemsObserver()
         setupPolygonItemsObserver()
+        setupCheckServiceTask()
+    }
+
+    private fun setupCheckServiceTask() {
+        timer = Timer()
+        val timerTask = timerTask {
+            //TODO load remote data
+        }
+        timer.schedule(timerTask, 20000L, 20000L)
     }
 
     private fun setupInitialCameraPosition() {

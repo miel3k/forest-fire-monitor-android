@@ -8,6 +8,8 @@ import com.tp.forestfiremonitor.map.viewmodel.MapViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 
 class KoinModules {
 
@@ -18,6 +20,12 @@ class KoinModules {
                 ForestFireMonitorDatabase::class.java,
                 "FOREST_FIRE_MONITOR.db"
             ).build()
+        }
+        single {
+            Retrofit.Builder()
+                .baseUrl("")
+                .addConverterFactory(MoshiConverterFactory.create())
+                .build()
         }
     }
 
