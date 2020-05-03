@@ -1,18 +1,24 @@
 package com.tp.forestfiremonitor.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.tp.base.MultipleLiveData
+import com.tp.base.RepositoryResult
 import com.tp.forestfiremonitor.data.area.model.Area
 import com.tp.forestfiremonitor.data.area.model.Coordinate
 import com.tp.forestfiremonitor.data.area.repository.AreaDataSource
+import com.tp.forestfiremonitor.data.fire.repository.FireDataSource
 import com.tp.forestfiremonitor.extension.toCoordinate
 import com.tp.forestfiremonitor.presentation.Item
 import kotlinx.coroutines.launch
 import java.util.*
 
-class MapViewModel(private val areaRepository: AreaDataSource) : ViewModel() {
+class MapViewModel(
+    private val areaRepository: AreaDataSource,
+    private val fireRepository: FireDataSource
+) : ViewModel() {
 
     private val selectedItemId = MutableLiveData<String>().apply { value = "" }
     val isEditAreaModeEnabled = MutableLiveData<Boolean>().apply { value = false }
@@ -97,6 +103,24 @@ class MapViewModel(private val areaRepository: AreaDataSource) : ViewModel() {
             ?.map { Item(it.id, getMarkerPositionOrDefault(it, marker), it.isDraggable) }
             .orEmpty()
         polygonItems.value = newPolygonItems
+    }
+
+    fun loadFires() {
+        val areaCoordinates = area.value?.coordinates
+        if (areaCoordinates.isNullOrEmpty()) {
+            return
+        }
+        val polygonCoordinates = areaCoordinates + areaCoordinates.first()
+        viewModelScope.launch {
+            when (val result = fireRepository.searchFires(polygonCoordinates)) {
+                is RepositoryResult.Success -> {
+                    Log.i("MapViewModel", "Current fires success = ${result.data}")
+                }
+                is RepositoryResult.Error -> {
+                    Log.e("MapViewModel", "Current fires error")
+                }
+            }
+        }
     }
 
     private fun getMarkerPositionOrDefault(item: Item, marker: Marker) =

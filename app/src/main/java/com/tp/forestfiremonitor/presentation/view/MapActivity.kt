@@ -106,7 +106,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun setupCheckServiceTask() {
         timer = Timer()
         val timerTask = timerTask {
-            //TODO load remote data
+            viewModel.loadFires()
         }
         timer.schedule(timerTask, 20000L, 20000L)
     }
