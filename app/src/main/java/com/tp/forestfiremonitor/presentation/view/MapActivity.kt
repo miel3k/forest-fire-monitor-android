@@ -1,5 +1,6 @@
 package com.tp.forestfiremonitor.presentation.view
 
+import android.Manifest
 import android.graphics.Color
 import android.os.Bundle
 import android.view.KeyEvent
@@ -14,6 +15,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.tp.base.extension.requestPermission
 import com.tp.base.extension.toast
 import com.tp.forestfiremonitor.R
 import com.tp.forestfiremonitor.data.fire.model.CurrentFire
@@ -101,6 +103,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         setupOnMapClickListener()
         setupOnMarkerClickListener()
         setupOnMarkerDragListener()
+        setupMyLocation()
         setupIsEditAreaModeEnabledObserver()
         setupMapStateObserver()
         setupPolygonItemsObserver()
@@ -158,6 +161,14 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
                 viewModel.onMarkerDrag(marker)
             }
         })
+    }
+
+    private fun setupMyLocation() {
+        requestPermission(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            onGranted = { map.isMyLocationEnabled = true },
+            onDenied = { map.isMyLocationEnabled = false }
+        )
     }
 
     private fun setupIsEditAreaModeEnabledObserver() {
