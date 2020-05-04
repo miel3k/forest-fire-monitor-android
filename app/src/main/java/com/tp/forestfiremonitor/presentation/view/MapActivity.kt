@@ -14,8 +14,11 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.tp.base.extension.toast
 import com.tp.forestfiremonitor.R
+import com.tp.forestfiremonitor.data.fire.model.CurrentFire
 import com.tp.forestfiremonitor.extension.toLatLng
+import com.tp.forestfiremonitor.presentation.Item
 import com.tp.forestfiremonitor.presentation.viewmodel.MapViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
@@ -93,17 +96,23 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+        setupZoomControls()
         setupInitialCameraPosition()
         setupOnMapClickListener()
         setupOnMarkerClickListener()
         setupOnMarkerDragListener()
         setupIsEditAreaModeEnabledObserver()
-        setupItemsObserver()
+        setupMapStateObserver()
         setupPolygonItemsObserver()
-        setupCheckServiceTask()
+        setupErrorObserver()
+        setupLoadFiresTimerTask()
     }
 
-    private fun setupCheckServiceTask() {
+    private fun setupZoomControls() {
+        map.uiSettings.isZoomControlsEnabled = true
+    }
+
+    private fun setupLoadFiresTimerTask() {
         timer = Timer()
         val timerTask = timerTask {
             viewModel.loadFires()
@@ -130,6 +139,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun setupOnMarkerClickListener() {
         map.setOnMarkerClickListener {
             viewModel.onMarkerClick(it)
+            it.showInfoWindow()
             true
         }
     }
@@ -168,19 +178,6 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun setupItemsObserver() {
-        viewModel.items.observe(this, Observer { coordinates ->
-            map.clear()
-            coordinates.forEach {
-                val markerOptions = MarkerOptions()
-                    .position(it.coordinate.toLatLng())
-                    .icon(BitmapDescriptorFactory.defaultMarker(getMarkerIconColor(it.isDraggable)))
-                    .draggable(it.isDraggable)
-                map.addMarker(markerOptions).apply { tag = it.id }
-            }
-        })
-    }
-
     private fun getMarkerIconColor(isDraggable: Boolean): Float {
         return if (isDraggable) {
             BitmapDescriptorFactory.HUE_BLUE
@@ -190,14 +187,53 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun setupPolygonItemsObserver() {
-        viewModel.polygonItems.observe(this, Observer { coordinates ->
-            editAreaPolygon?.remove()
-            if (coordinates.isEmpty()) return@Observer
-            val polygonOptions = PolygonOptions()
-                .strokeColor(Color.BLUE)
-                .fillColor(Color.LTGRAY)
-                .addAll(coordinates.map { it.coordinate.toLatLng() })
-            editAreaPolygon = map.addPolygon(polygonOptions)
+        viewModel.polygonItems.observe(this, Observer { polygonItems ->
+            drawPolygonItems(polygonItems)
+        })
+    }
+
+    private fun drawPolygonItems(items: List<Item>) {
+        editAreaPolygon?.remove()
+        if (items.isEmpty()) return
+        val polygonOptions = PolygonOptions()
+            .strokeColor(Color.BLUE)
+            .fillColor(0x4F0077c2)
+            .addAll(items.map { it.coordinate.toLatLng() })
+        editAreaPolygon = map.addPolygon(polygonOptions)
+    }
+
+    private fun setupMapStateObserver() {
+        viewModel.mapState.observe(this, Observer { mapState ->
+            map.clear()
+            drawItems(mapState.items)
+            drawCurrentFires(mapState.currentFires)
+        })
+    }
+
+    private fun drawItems(items: List<Item>) {
+        items.forEach {
+            val markerOptions = MarkerOptions()
+                .position(it.coordinate.toLatLng())
+                .icon(BitmapDescriptorFactory.defaultMarker(getMarkerIconColor(it.isDraggable)))
+                .draggable(it.isDraggable)
+            map.addMarker(markerOptions).apply { tag = it.id }
+        }
+    }
+
+    private fun drawCurrentFires(currentFires: List<CurrentFire>) {
+        currentFires.forEach {
+            val markerOptions = MarkerOptions()
+                .position(LatLng(it.latitude, it.longitude))
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
+                .title("Date: " + it.date)
+                .snippet("Confidence: " + it.confidence)
+            map.addMarker(markerOptions)
+        }
+    }
+
+    private fun setupErrorObserver() {
+        viewModel.error.observe(this, Observer {
+            toast(it)
         })
     }
 }

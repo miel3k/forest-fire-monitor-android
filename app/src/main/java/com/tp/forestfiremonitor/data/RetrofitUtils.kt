@@ -1,6 +1,6 @@
 package com.tp.forestfiremonitor.data
 
-import com.tp.base.RepositoryResult
+import com.tp.base.data.RepositoryResult
 import retrofit2.Response
 import java.io.IOException
 

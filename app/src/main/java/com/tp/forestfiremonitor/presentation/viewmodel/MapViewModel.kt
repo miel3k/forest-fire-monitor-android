@@ -1,14 +1,15 @@
 package com.tp.forestfiremonitor.presentation.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
-import com.tp.base.MultipleLiveData
-import com.tp.base.RepositoryResult
+import com.tp.base.data.RepositoryResult
+import com.tp.base.lifecycle.MultipleLiveData
+import com.tp.base.lifecycle.SingleLiveEvent
 import com.tp.forestfiremonitor.data.area.model.Area
 import com.tp.forestfiremonitor.data.area.model.Coordinate
 import com.tp.forestfiremonitor.data.area.repository.AreaDataSource
+import com.tp.forestfiremonitor.data.fire.model.CurrentFire
 import com.tp.forestfiremonitor.data.fire.repository.FireDataSource
 import com.tp.forestfiremonitor.extension.toCoordinate
 import com.tp.forestfiremonitor.presentation.Item
@@ -31,7 +32,7 @@ class MapViewModel(
             }
         }
     }
-    val items: MutableLiveData<List<Item>> by lazy {
+    private val items: MutableLiveData<List<Item>> by lazy {
         MultipleLiveData<List<Item>>().apply {
             addSources(
                 area,
@@ -49,13 +50,22 @@ class MapViewModel(
             }
         }
     }
-    val polygonItems: MutableLiveData<List<Item>> by lazy {
-        MediatorLiveData<List<Item>>().apply {
-            addSource(items) {
-                value = it
+    private val currentFires = MutableLiveData<List<CurrentFire>>().apply { value = listOf() }
+    val mapState: LiveData<MapState> by lazy {
+        MultipleLiveData<MapState>().apply {
+            addSources(items, currentFires) { items, currentFires ->
+                value = MapState(items, currentFires)
             }
         }
     }
+    val polygonItems: MutableLiveData<List<Item>> by lazy {
+        MediatorLiveData<List<Item>>().apply {
+            addSource(mapState) {
+                value = it.items
+            }
+        }
+    }
+    val error = SingleLiveEvent<String>()
 
     fun openEditAreaMode() {
         isEditAreaModeEnabled.value = true
@@ -113,12 +123,8 @@ class MapViewModel(
         val polygonCoordinates = areaCoordinates + areaCoordinates.first()
         viewModelScope.launch {
             when (val result = fireRepository.searchFires(polygonCoordinates)) {
-                is RepositoryResult.Success -> {
-                    Log.i("MapViewModel", "Current fires success = ${result.data}")
-                }
-                is RepositoryResult.Error -> {
-                    Log.e("MapViewModel", "Current fires error")
-                }
+                is RepositoryResult.Success -> currentFires.value = result.data.currentFires
+                is RepositoryResult.Error -> error.value = result.exception.message
             }
         }
     }
@@ -131,4 +137,9 @@ class MapViewModel(
     private fun List<Coordinate>.toItems() = map { Item(UUID.randomUUID().toString(), it) }
 
     private fun List<Item>.toCoordinates() = map { it.coordinate }
+
+    data class MapState(
+        val items: List<Item> = listOf(),
+        val currentFires: List<CurrentFire> = listOf()
+    )
 }

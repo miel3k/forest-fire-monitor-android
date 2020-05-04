@@ -1,4 +1,4 @@
-package com.tp.base
+package com.tp.base.data
 
 sealed class RepositoryResult<out R> {
     data class Success<out T>(val data: T) : RepositoryResult<T>()

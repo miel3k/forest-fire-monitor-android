@@ -3,9 +3,9 @@ package com.tp.forestfiremonitor.data.fire.repository
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import com.tp.base.ApiConstants
-import com.tp.base.MediaTypes
-import com.tp.base.RepositoryResult
+import com.tp.base.constant.ApiConstants
+import com.tp.base.constant.MediaTypes
+import com.tp.base.data.RepositoryResult
 import com.tp.forestfiremonitor.data.area.model.Coordinate
 import com.tp.forestfiremonitor.data.call
 import com.tp.forestfiremonitor.data.fire.model.FiresResult

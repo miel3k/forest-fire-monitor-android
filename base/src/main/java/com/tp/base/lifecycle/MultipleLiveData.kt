@@ -1,4 +1,4 @@
-package com.tp.base
+package com.tp.base.lifecycle
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
