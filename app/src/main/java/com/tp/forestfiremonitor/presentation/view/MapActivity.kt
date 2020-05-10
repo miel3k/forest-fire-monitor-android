@@ -86,6 +86,11 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         timer.cancel()
     }
 
+    override fun onResume() {
+        super.onResume()
+        setupLoadFiresTimerTask()
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         editAreaActionMode?.let {
             if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_DOWN) {
@@ -120,7 +125,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         val timerTask = timerTask {
             viewModel.loadFires()
         }
-        timer.schedule(timerTask, 20000L, 20000L)
+        timer.schedule(timerTask, 10000L, 10000L)
     }
 
     private fun setupInitialCameraPosition() {
