@@ -68,6 +68,7 @@ class MapViewModel(
         }
     }
     val error = SingleLiveEvent<String>()
+    val removeTooltipEvent = SingleLiveEvent<Void>()
 
     fun openEditAreaMode() {
         isEditAreaModeEnabled.value = true
@@ -80,8 +81,9 @@ class MapViewModel(
 
     fun saveEditArea() {
         if (!isEditAreaModeEnabled()) return
-        val items = items.value
-        if (items.isNullOrEmpty()) return
+        val items = items.value ?: return
+        currentFires.value = emptyList()
+        fireHazards.value = emptyList()
         val coordinates = items.toCoordinates()
         val area = Area(coordinates = coordinates)
         viewModelScope.launch { areaRepository.saveArea(area) }
@@ -98,6 +100,7 @@ class MapViewModel(
     fun onMarkerClick(marker: Marker) {
         if (!isEditAreaModeEnabled()) return
         val item = items.value?.find { it.id == marker.tag } ?: return
+        removeTooltipEvent.call()
         selectedItemId.value = item.id
     }
 
@@ -115,6 +118,15 @@ class MapViewModel(
             ?.map { Item(it.id, getMarkerPositionOrDefault(it, marker), it.isDraggable) }
             .orEmpty()
         polygonItems.value = newPolygonItems
+    }
+
+    fun onRemoveBalloonClick() {
+        if (!isEditAreaModeEnabled()) return
+        val selectedItemId = requireNotNull(selectedItemId.value)
+        val newItems = items.value.orEmpty().toMutableList()
+        val indexToRemove = newItems.indexOfFirst { it.id == selectedItemId }
+        newItems.removeAt(indexToRemove)
+        items.value = newItems
     }
 
     fun loadFires() {

@@ -1,6 +1,7 @@
 package com.tp.forestfiremonitor.presentation.view
 
 import android.Manifest
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.KeyEvent
@@ -9,12 +10,16 @@ import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.skydoves.balloon.Balloon
+import com.skydoves.balloon.BalloonAnimation
+import com.skydoves.balloon.createBalloon
 import com.tp.base.extension.requestPermission
 import com.tp.base.extension.toast
 import com.tp.forestfiremonitor.R
@@ -59,6 +64,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
     private var editAreaPolygon: Polygon? = null
+    private var balloon: Balloon? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,6 +120,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         setupMapStateObserver()
         setupPolygonItemsObserver()
         setupErrorObserver()
+        setupRemoveTooltipEventObserver()
         setupLoadFiresTimerTask()
     }
 
@@ -184,6 +191,8 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
                 setupCloseActionModeButton()
             } else {
                 editAreaActionMode?.finish()
+                balloon?.dismiss()
+                balloon = null
             }
         })
     }
@@ -263,5 +272,37 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         viewModel.error.observe(this, Observer {
             toast(it)
         })
+    }
+
+    private fun setupRemoveTooltipEventObserver() {
+        viewModel.removeTooltipEvent.observe(this, Observer {
+            balloon?.dismiss()
+            balloon = null
+            showRemoveTooltip(this)
+        })
+    }
+
+    private fun showRemoveTooltip(context: Context) {
+        balloon = createBalloon(context) {
+            setWidthRatio(0.5f)
+            setArrowVisible(false)
+            setHeight(65)
+            setCornerRadius(4f)
+            setAlpha(0.9f)
+            setText("Remove marker")
+            setTextColorResource(R.color.white)
+            setIconDrawable(ContextCompat.getDrawable(context, R.drawable.ic_delete_black_24dp))
+            setBackgroundColorResource(R.color.colorPrimaryDark)
+            setOnBalloonClickListener {
+                viewModel.onRemoveBalloonClick()
+            }
+            setFocusable(false)
+            setDismissWhenClicked(true)
+            setDismissWhenTouchOutside(false)
+            setBalloonAnimation(BalloonAnimation.FADE)
+            setLifecycleOwner(lifecycleOwner)
+        }
+        val mapView = supportFragmentManager.findFragmentById(R.id.map)!!.view!!
+        balloon?.showAlignBottom(mapView)
     }
 }
