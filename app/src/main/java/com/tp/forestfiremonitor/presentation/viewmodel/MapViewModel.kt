@@ -10,6 +10,7 @@ import com.tp.forestfiremonitor.data.area.model.Area
 import com.tp.forestfiremonitor.data.area.model.Coordinate
 import com.tp.forestfiremonitor.data.area.repository.AreaDataSource
 import com.tp.forestfiremonitor.data.fire.model.CurrentFire
+import com.tp.forestfiremonitor.data.fire.model.FireHazard
 import com.tp.forestfiremonitor.data.fire.repository.FireDataSource
 import com.tp.forestfiremonitor.extension.toCoordinate
 import com.tp.forestfiremonitor.presentation.Item
@@ -51,10 +52,11 @@ class MapViewModel(
         }
     }
     private val currentFires = MutableLiveData<List<CurrentFire>>().apply { value = listOf() }
+    private val fireHazards = MutableLiveData<List<FireHazard>>().apply { value = listOf() }
     val mapState: LiveData<MapState> by lazy {
         MultipleLiveData<MapState>().apply {
-            addSources(items, currentFires) { items, currentFires ->
-                value = MapState(items, currentFires)
+            addSources(items, currentFires, fireHazards) { items, currentFires, fireHazards ->
+                value = MapState(items, currentFires, fireHazards)
             }
         }
     }
@@ -123,7 +125,11 @@ class MapViewModel(
         val polygonCoordinates = areaCoordinates + areaCoordinates.first()
         viewModelScope.launch {
             when (val result = fireRepository.searchFires(polygonCoordinates)) {
-                is RepositoryResult.Success -> currentFires.value = result.data.currentFires
+                is RepositoryResult.Success -> {
+                    val fires = result.data
+                    currentFires.value = fires.currentFires
+                    fireHazards.value = fires.fireHazards
+                }
                 is RepositoryResult.Error -> error.value = result.exception.message
             }
         }
@@ -140,6 +146,7 @@ class MapViewModel(
 
     data class MapState(
         val items: List<Item> = listOf(),
-        val currentFires: List<CurrentFire> = listOf()
+        val currentFires: List<CurrentFire> = listOf(),
+        val fireHazards: List<FireHazard> = listOf()
     )
 }

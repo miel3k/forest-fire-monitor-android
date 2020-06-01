@@ -19,6 +19,7 @@ import com.tp.base.extension.requestPermission
 import com.tp.base.extension.toast
 import com.tp.forestfiremonitor.R
 import com.tp.forestfiremonitor.data.fire.model.CurrentFire
+import com.tp.forestfiremonitor.data.fire.model.FireHazard
 import com.tp.forestfiremonitor.extension.toLatLng
 import com.tp.forestfiremonitor.presentation.Item
 import com.tp.forestfiremonitor.presentation.viewmodel.MapViewModel
@@ -223,6 +224,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             map.clear()
             drawItems(mapState.items)
             drawCurrentFires(mapState.currentFires)
+            drawFireHazards(mapState.fireHazards)
         })
     }
 
@@ -243,6 +245,16 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
                 .title("Date: " + it.date)
                 .snippet("Confidence: " + it.confidence)
+            map.addMarker(markerOptions)
+        }
+    }
+
+    private fun drawFireHazards(fireHazards: List<FireHazard>) {
+        fireHazards.forEach {
+            val markerOptions = MarkerOptions()
+                .position(LatLng(it.hazardPoint.latitude, it.hazardPoint.longitude))
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA))
+                .title("Hazard: " + it.hazard)
             map.addMarker(markerOptions)
         }
     }
