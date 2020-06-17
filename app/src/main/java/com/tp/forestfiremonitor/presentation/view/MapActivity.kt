@@ -1,9 +1,14 @@
 package com.tp.forestfiremonitor.presentation.view
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Color
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -22,12 +27,15 @@ import com.skydoves.balloon.BalloonAnimation
 import com.skydoves.balloon.createBalloon
 import com.tp.base.extension.requestPermission
 import com.tp.base.extension.toast
+import com.tp.forestfiremonitor.ForestFireMonitorApplication
 import com.tp.forestfiremonitor.R
 import com.tp.forestfiremonitor.data.fire.model.CurrentFire
 import com.tp.forestfiremonitor.data.fire.model.FireHazard
 import com.tp.forestfiremonitor.extension.toLatLng
 import com.tp.forestfiremonitor.presentation.Item
 import com.tp.forestfiremonitor.presentation.viewmodel.MapViewModel
+import com.tp.forestfiremonitor.service.LocationForegroundService
+import com.tp.forestfiremonitor.service.ServiceAction
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
 import kotlin.concurrent.timerTask
@@ -122,6 +130,40 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         setupErrorObserver()
         setupRemoveTooltipEventObserver()
         setupLoadFiresTimerTask()
+        setupLocationService()
+    }
+
+    private fun setupLocationService() {
+        val serviceConnection = object : ServiceConnection {
+            override fun onServiceDisconnected(name: ComponentName) {
+            }
+
+            override fun onServiceConnected(name: ComponentName, service: IBinder) {
+                val binder = service as LocationForegroundService.LocationForegroundServiceBinder
+                val isServiceStarted = binder.isServiceStarted()
+                Log.i(ForestFireMonitorApplication::class.java.simpleName,"Service started: $isServiceStarted")
+            }
+        }
+
+        applicationContext?.let {
+            val serviceIntent = getLocationForegroundServiceIntent(it)
+            it.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+            serviceIntent.setServiceAction(ServiceAction.START)
+            ContextCompat.startForegroundService(it, serviceIntent)
+        }
+    }
+
+    private fun Intent.setServiceAction(serviceAction: String) {
+        action = serviceAction
+    }
+
+    private fun getLocationForegroundServiceIntent(
+        context: Context,
+        deviceId: String = "",
+        interval: Int = LocationForegroundService.LOCATION_UPDATES_INTERVAL_DEFAULT_VALUE
+    ) = Intent(context, LocationForegroundService::class.java).apply {
+        putExtra(LocationForegroundService.DEVICE_ID, deviceId)
+        putExtra(LocationForegroundService.LOCATION_UPDATES_INTERVAL, interval)
     }
 
     private fun setupZoomControls() {

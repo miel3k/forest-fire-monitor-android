@@ -26,7 +26,7 @@ class KoinModules {
         }
         single {
             Retrofit.Builder()
-                .baseUrl("http://10.0.2.2:8080")
+                .baseUrl("http://10.17.4.97:8080")
                 .addConverterFactory(MoshiConverterFactory.create())
                 .build()
         }

@@ -14,4 +14,10 @@ interface FireService {
         @HeaderMap headers: Map<String, String>,
         @Body body: RequestBody
     ): Response<FiresResult>
+
+    @POST("/api/devices")
+    suspend fun sendDeviceLocation(
+        @HeaderMap headers: Map<String, String>,
+        @Body body: RequestBody
+    ): Response<Void>
 }
