@@ -31,10 +31,12 @@ import com.tp.forestfiremonitor.ForestFireMonitorApplication
 import com.tp.forestfiremonitor.R
 import com.tp.forestfiremonitor.data.fire.model.CurrentFire
 import com.tp.forestfiremonitor.data.fire.model.FireHazard
+import com.tp.forestfiremonitor.data.fire.model.FiresResult
 import com.tp.forestfiremonitor.extension.toLatLng
 import com.tp.forestfiremonitor.presentation.Item
 import com.tp.forestfiremonitor.presentation.viewmodel.MapViewModel
 import com.tp.forestfiremonitor.service.LocationForegroundService
+import com.tp.forestfiremonitor.service.NotificationEvents
 import com.tp.forestfiremonitor.service.ServiceAction
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
@@ -79,6 +81,9 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         setContentView(R.layout.activity_maps)
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+        NotificationEvents.serviceEvent.observe(this, Observer<FiresResult> {
+            fireResult -> viewModel.handleNewNotification(fireResult)
+        })
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

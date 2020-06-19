@@ -1,5 +1,6 @@
 package com.tp.forestfiremonitor.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
@@ -11,16 +12,24 @@ import com.tp.forestfiremonitor.data.area.model.Coordinate
 import com.tp.forestfiremonitor.data.area.repository.AreaDataSource
 import com.tp.forestfiremonitor.data.fire.model.CurrentFire
 import com.tp.forestfiremonitor.data.fire.model.FireHazard
+import com.tp.forestfiremonitor.data.fire.model.FiresResult
 import com.tp.forestfiremonitor.data.fire.repository.FireDataSource
 import com.tp.forestfiremonitor.extension.toCoordinate
 import com.tp.forestfiremonitor.presentation.Item
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.*
 
 class MapViewModel(
     private val areaRepository: AreaDataSource,
     private val fireRepository: FireDataSource
 ) : ViewModel() {
+
+    private val mutex = Mutex()
+
+    private var lastNotificationFires = emptyList<CurrentFire>()
+    private var lastNotificationHazards = emptyList<FireHazard>()
 
     private val selectedItemId = MutableLiveData<String>().apply { value = "" }
     val isEditAreaModeEnabled = MutableLiveData<Boolean>().apply { value = false }
@@ -143,6 +152,18 @@ class MapViewModel(
                     fireHazards.value = fires.fireHazards
                 }
                 is RepositoryResult.Error -> error.value = result.exception.message
+            }
+        }
+    }
+
+    fun handleNewNotification(fires: FiresResult) {
+        Log.d("MapViewModel", "Handling fire results notification")
+        viewModelScope.launch {
+            mutex.withLock {
+                currentFires.value = currentFires.value?.minus(lastNotificationFires)?.plus(fires.currentFires)
+                fireHazards.value = fireHazards.value?.minus(lastNotificationHazards)?.plus(fires.fireHazards)
+                lastNotificationFires = fires.currentFires;
+                lastNotificationHazards = fires.fireHazards;
             }
         }
     }

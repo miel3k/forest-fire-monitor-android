@@ -9,5 +9,7 @@ interface FireDataSource {
 
     suspend fun searchFires(coordinates: List<Coordinate>): RepositoryResult<FiresResult>
 
-    suspend fun updateLocation(device: Device): RepositoryResult<Void>
+    suspend fun updateLocation(device: Device): RepositoryResult<String>
+
+    suspend fun getFiresNotification(token: String): RepositoryResult<FiresResult>
 }

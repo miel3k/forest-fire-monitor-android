@@ -20,4 +20,11 @@ interface FireService {
         @HeaderMap headers: Map<String, String>,
         @Body body: RequestBody
     ): Response<Void>
+
+
+    @POST("/api/notifications")
+    suspend fun getFireNotifications(
+        @HeaderMap headers: Map<String, String>,
+        @Body body: RequestBody
+    ): Response<FiresResult>
 }

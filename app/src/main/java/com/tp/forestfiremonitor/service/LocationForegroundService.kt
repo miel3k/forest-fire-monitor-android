@@ -116,11 +116,7 @@ class LocationForegroundService : Service() {
     }
 
     private fun getAvailableLocationProvider(): String {
-        return if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            LocationManager.GPS_PROVIDER
-        } else {
-            LocationManager.NETWORK_PROVIDER
-        }
+        return LocationManager.NETWORK_PROVIDER
     }
 
     private suspend fun sendLocation(location: Location) {
@@ -193,7 +189,7 @@ class LocationForegroundService : Service() {
 
     companion object {
         private const val LOCATION_MIN_DISTANCE = 0f
-        const val LOCATION_UPDATES_INTERVAL_DEFAULT_VALUE = 15
+        const val LOCATION_UPDATES_INTERVAL_DEFAULT_VALUE = 3
         const val LOCATION_UPDATES_INTERVAL = "LOCATION_UPDATES_INTERVAL"
         const val DEVICE_ID = "DEVICE_ID"
         const val LOCATION_FOREGROUND_SERVICE = 10000
