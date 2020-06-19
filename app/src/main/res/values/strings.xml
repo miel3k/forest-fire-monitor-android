@@ -4,4 +4,6 @@
     <string name="edit">Edit</string>
     <string name="save">Save</string>
     <string name="location_service_title">Location service is running</string>
+    <string name="channel_name">Channel 01</string>
+    <string name="channel_description">Channel notifications</string>
 </resources>

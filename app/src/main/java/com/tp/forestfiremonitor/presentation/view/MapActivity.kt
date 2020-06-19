@@ -1,11 +1,14 @@
 package com.tp.forestfiremonitor.presentation.view
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -27,7 +30,6 @@ import com.skydoves.balloon.BalloonAnimation
 import com.skydoves.balloon.createBalloon
 import com.tp.base.extension.requestPermission
 import com.tp.base.extension.toast
-import com.tp.forestfiremonitor.ForestFireMonitorApplication
 import com.tp.forestfiremonitor.R
 import com.tp.forestfiremonitor.data.fire.model.CurrentFire
 import com.tp.forestfiremonitor.data.fire.model.FireHazard
@@ -81,8 +83,9 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         setContentView(R.layout.activity_maps)
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-        NotificationEvents.serviceEvent.observe(this, Observer<FiresResult> {
-            fireResult -> viewModel.handleNewNotification(fireResult)
+        createNotificationChannel()
+        NotificationEvents.serviceEvent.observe(this, Observer<FiresResult> { fireResult ->
+            viewModel.handleNewNotification(fireResult)
         })
     }
 
@@ -146,7 +149,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             override fun onServiceConnected(name: ComponentName, service: IBinder) {
                 val binder = service as LocationForegroundService.LocationForegroundServiceBinder
                 val isServiceStarted = binder.isServiceStarted()
-                Log.i(ForestFireMonitorApplication::class.java.simpleName,"Service started: $isServiceStarted")
+                Log.i(TAG, "Service started: $isServiceStarted")
             }
         }
 
@@ -155,6 +158,20 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             it.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
             serviceIntent.setServiceAction(ServiceAction.START)
             ContextCompat.startForegroundService(it, serviceIntent)
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.channel_name)
+            val descriptionText = getString(R.string.channel_description)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
         }
     }
 
@@ -351,5 +368,10 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         val mapView = supportFragmentManager.findFragmentById(R.id.map)!!.view!!
         balloon?.showAlignBottom(mapView)
+    }
+
+    companion object {
+        const val CHANNEL_ID = "20000"
+        private const val TAG = "MapActivity"
     }
 }
